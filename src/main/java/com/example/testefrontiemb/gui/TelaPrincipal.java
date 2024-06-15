@@ -7,20 +7,27 @@ import org.springframework.stereotype.Component;
 import com.example.testefrontiemb.service.RegistroService;
 
 import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.text.DefaultFormatterFactory;
-import javax.swing.text.MaskFormatter;
 import javax.swing.text.NumberFormatter;
+import java.awt.*;
 import java.awt.event.*;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.math.BigDecimal;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
-import java.text.ParseException;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Currency;
+import java.util.Objects;
+import java.util.prefs.Preferences;
 
 @Component
 public class TelaPrincipal extends JFrame{
@@ -49,13 +56,23 @@ public class TelaPrincipal extends JFrame{
     private JLabel valorPrestLabel;
     private JLabel faltaGastarCustLabel;
     private JLabel faltaGastarInvestLabel;
+    private JButton definirPastaDeArmazenamentoButton;
     private RegistroService registroService;
+    ArrayList<RegistroContabil> registros;
+    public static final String FIRST_TIME_SETUP_PREF = "first-time-setup";
+    public static final String PASTA_DESTINO_PREF = "pasta-destino";
+    Preferences prefs = Preferences.userRoot().node("Contabilidade-IEMB");
     @Autowired
     public TelaPrincipal(RegistroService registroService) {
         this.registroService = registroService;
+        table.setFont(new Font("Serif", Font.BOLD, 16)); //Configura o tamanho da fonte
+        table.setRowHeight(30);
+        table.setDefaultRenderer(Object.class,new CustomTableCellRenderer());
+
         atualizaTabela();
 
         exibir();
+        if(prefs.getBoolean(FIRST_TIME_SETUP_PREF,true)) firstTimeSetup();
         inserirDespesaButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -68,6 +85,12 @@ public class TelaPrincipal extends JFrame{
             @Override
             public void actionPerformed(ActionEvent e) {
                 atualizaTabela();
+                try {
+                    Desktop.getDesktop().open(new File("D:\\Imagens\\Screenshots\\Captura de tela 2023-06-25 195406.png"));
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                }
+                //Desktop.getDesktop().browseFileDirectory(new File("D:\\Imagens\\Screenshots\\Captura de tela 2023-06-25 195406.png"));
             }
         });
 
@@ -79,11 +102,103 @@ public class TelaPrincipal extends JFrame{
                 telaInserirDespesa.exibir(painel);
             }
         });
+        table.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    RegistroContabil registroEditar = registros.get(table.getSelectedRow());
+                    System.out.println("É o registro de nome: " + registroEditar.getTitulo());
+                    EditarRegistro telaEditarRegistro = new EditarRegistro(registroService,registroEditar);
+                    telaEditarRegistro.setParent(TelaPrincipal.this);
+                    telaEditarRegistro.exibir(painel);
+                }
+            }
+        });
+        definirPastaDeArmazenamentoButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String pathPastaDestinoNova = selecionaPasta();
+                if(!pathPastaDestinoNova.isEmpty()) { //Se conseguiu pegar a pasta nova e ela está vazia
+                    final File PASTA_ATUAL = new File(prefs.get(PASTA_DESTINO_PREF,null)); //Instanciar a pasta atual para verificar se existem arquivos na pasta e, se existirem, copiar para a pasta nova
+                    if(PASTA_ATUAL.listFiles().length == 0) { //Verificar se a pasta está vazia
+                        prefs.put(PASTA_DESTINO_PREF,pathPastaDestinoNova);
+                    } else { //Caso a pasta não esteja vazia
+                        int opcao = JOptionPane.showConfirmDialog(painel,"Parece que já existem objetos na pasta de destino atual. Você deseja mover eles para o novo destino?","Atenção",JOptionPane.YES_NO_CANCEL_OPTION);
+                        if(opcao == JOptionPane.YES_OPTION) {// Se o usuário quiser copiar
+                            ArrayList<String> arquivosNaoCopiados = new ArrayList<>();
+                            for (File arquivo : PASTA_ATUAL.listFiles()) {
+                                try {
+                                    Files.copy(Path.of(arquivo.getAbsolutePath()),Path.of(pathPastaDestinoNova +"\\" + arquivo.getName()));
+                                    System.out.println("Copiado" + arquivo.getName());
+                                } catch (IOException ex) {
+                                    arquivosNaoCopiados.add(arquivo.getName());
+                                    ex.printStackTrace();
+                                }
+                            }
+                            if(arquivosNaoCopiados.isEmpty()) {
+                                JOptionPane.showMessageDialog(painel,"Todos os arquivos foram copiados com sucesso","Sucesso",JOptionPane.INFORMATION_MESSAGE);
+                                prefs.put(PASTA_DESTINO_PREF,pathPastaDestinoNova);
+                            } else {
+                                JOptionPane.showMessageDialog(painel,"Não foi possível copiar os seguintes arquivos: " + arquivosNaoCopiados,"Erro",JOptionPane.ERROR_MESSAGE);
+                            }
+
+                        } else if (opcao == JOptionPane.NO_OPTION) {
+                            prefs.put(PASTA_DESTINO_PREF,pathPastaDestinoNova);
+                        }
+                    }
+                } else { //Se a pasta estiver vazia
+                    JOptionPane.showMessageDialog(painel, "Não foi possível acessar a pasta selecionada", "ERRO", JOptionPane.ERROR_MESSAGE);
+                }
+                }
+        });
+    }
+
+    private void firstTimeSetup() {
+        JOptionPane.showMessageDialog(painel,
+                "Bem vindo! Como é a sua primeira vez utilizando o programa, por favor selecione a pasta onde ficarão salvos\n " +
+                        "todos os anexos (PDFs das notas fiscais, fotografias etc). É recomendado que seja escolhida uma pasta \n" +
+                        "do OneDrive, Google Drive ou outro serviço que faça backup em nuvem, por segurança",
+                "Aviso",JOptionPane.INFORMATION_MESSAGE);
+        do {
+            String pathPastaDestino = selecionaPasta();
+            if(!pathPastaDestino.isEmpty()) { //Se a pasta foi selecionada corretamente e está vazia
+            System.out.println("Salvar caminho como padrão: " + pathPastaDestino);
+            prefs.put(PASTA_DESTINO_PREF, pathPastaDestino);
+        } else {}
+            JOptionPane.showMessageDialog(painel,"É necessário escolher uma pasta para salvar os anexos","Erro",JOptionPane.ERROR_MESSAGE);
+        } while (prefs.get(PASTA_DESTINO_PREF, "").equals(""));
+        prefs.putBoolean(FIRST_TIME_SETUP_PREF,false);
+
+    }
+
+    private String selecionaPasta() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        int returnVal = fileChooser.showOpenDialog(painel);
+        System.out.println("Valor de Return Val: " + returnVal);
+        if(returnVal == JFileChooser.CANCEL_OPTION) {
+            return "";
+        }
+        String pastaDestino = fileChooser.getSelectedFile().getAbsolutePath();
+        if(returnVal == JFileChooser.APPROVE_OPTION & Path.of(pastaDestino).toFile().exists()) {
+            final File PASTA_ATUAL = new File(pastaDestino); //Instanciar a pasta atual para verificar se existem arquivos na pasta e, se existirem, copiar para a pasta nova
+            if(PASTA_ATUAL.listFiles().length == 0) {
+                return pastaDestino;
+
+            } else {
+                JOptionPane.showMessageDialog(painel,"A pasta selecionada deve estar vazia. Por favor selecione outra pasta","Erro",JOptionPane.ERROR_MESSAGE);
+                return "";
+            }
+        } else {
+            return "";
+        }
     }
 
     public void atualizaTabela() {
         registroService.lerRegistrosParaTeste();
-        ArrayList<RegistroContabil> registros = registroService.lerTudo();
+        registros = registroService.lerTudo();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
         DefaultTableModel modelo = new DefaultTableModel(COLUNAS,0){
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -96,7 +211,7 @@ public class TelaPrincipal extends JFrame{
                     registro.getTitulo(),
                     registro.getDescricao(),
                     registro.getTipo(),
-                    registro.getData().toString(),
+                    registro.getData().format(formatter),
                     String.valueOf(registro.getValor()),
                     registro.getOrigemOuDestinacao(),
                     registro.getCpfCnpj(),

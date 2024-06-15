@@ -4,6 +4,9 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDate;
+import java.util.Date;
+
 @Entity
 @Table
 public class RegistroContabil {
@@ -17,7 +20,7 @@ public class RegistroContabil {
     @Getter @Setter
     private String tipo;
     @Getter @Setter
-    private String data;
+    private LocalDate data;
     @Getter @Setter
     private double valor;
     @Getter @Setter
@@ -29,7 +32,7 @@ public class RegistroContabil {
     @Getter @Setter
     private String pathScanNotaFiscal;
 
-    protected RegistroContabil(String titulo, String descricao, String tipo, String data, Double valor) {
+    protected RegistroContabil(String titulo, String descricao, String tipo, LocalDate data, Double valor) {
         this.titulo = titulo;
         this.descricao = descricao;
         this.tipo = tipo;
@@ -37,7 +40,7 @@ public class RegistroContabil {
         this.valor = valor;
     }
 
-    public RegistroContabil(String titulo, String descricao, String tipo, String data, Double valor, String origemOuDestinacao, String cpfCnpj, String numNotaFiscal, String pathScanNotaFiscal) {
+    public RegistroContabil(String titulo, String descricao, String tipo, LocalDate data, Double valor, String origemOuDestinacao, String cpfCnpj, String numNotaFiscal, String pathScanNotaFiscal) {
         this.titulo = titulo;
         this.descricao = descricao;
         this.tipo = tipo;

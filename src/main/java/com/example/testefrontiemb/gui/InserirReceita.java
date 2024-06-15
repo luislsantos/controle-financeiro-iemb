@@ -1,6 +1,7 @@
 package com.example.testefrontiemb.gui;
 
 import com.example.testefrontiemb.models.Receita;
+import com.example.testefrontiemb.service.OrgArquivosService;
 import com.example.testefrontiemb.service.RegistroService;
 import lombok.Setter;
 
@@ -11,6 +12,8 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 public class InserirReceita extends JFrame{
     private JPanel painelInserirDesp;
@@ -32,11 +35,12 @@ public class InserirReceita extends JFrame{
     private JTextField fotosTextField;
     private JButton buscarButton1;
     private RegistroService registroService;
+    OrgArquivosService orgArquivosService;
     @Setter
     TelaPrincipal parent;
 
     public InserirReceita(RegistroService registroService) {
-        this.registroService = registroService;
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         dataField.setFormatterFactory(new DefaultFormatterFactory(new DateFormatter(new SimpleDateFormat("dd/MM/yyyy"))));
         cancelarButton.addActionListener(new ActionListener() {
             @Override
@@ -49,7 +53,7 @@ public class InserirReceita extends JFrame{
             public void actionPerformed(ActionEvent e) {
                 if(tituloField.getText().isEmpty() |
                         descriçãoField.getText().isEmpty() |
-                        dataField.getValue().toString().isEmpty() |
+                        dataField.getText().isEmpty() |
                         valorField.getText().isEmpty() |
                         (!sorteioRadioButton.isSelected() & !rateioRadioButton.isSelected()) |
                         cpfCnpjField.getText().isEmpty() |
@@ -65,13 +69,14 @@ public class InserirReceita extends JFrame{
                     Receita receita = new Receita(
                             tituloField.getText(),
                             descriçãoField.getText(),
-                            dataField.getText(),
+                            LocalDate.parse(dataField.getText(),formatter),
                             Double.parseDouble(valorField.getText()),
                             origem,
                             cpfCnpjField.getText(),
                             numNotaFiscalField.getText(),
                             pathScanNotaField.getText(),
                             null);
+                    //orgArquivosService.copiaArquivos(receita);
                     registroService.salvarRegistro(receita);
                     parent.atualizaTabela();
                     dispose();
@@ -84,7 +89,7 @@ public class InserirReceita extends JFrame{
         JOptionPane.showMessageDialog(painelInserirDesp,"For favor preencha todos os campos","Erro",JOptionPane.ERROR_MESSAGE);
     }
     public void exibir(Component parent) {
-        this.setTitle("Inserir Despesa");
+        this.setTitle("Inserir Receita");
         this.setContentPane(painelInserirDesp);
         this.pack();
         this.setLocationRelativeTo(parent);

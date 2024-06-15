@@ -1,5 +1,6 @@
 package com.example.testefrontiemb.gui;
 
+import com.example.testefrontiemb.components.CustomDateTimeFormatter;
 import com.example.testefrontiemb.models.RegistroContabil;
 import com.example.testefrontiemb.service.RegistroService;
 import lombok.Setter;
@@ -16,12 +17,11 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-
 public class InserirRegistro extends JFrame{
     private JPanel painelEditarRegistro;
     private JLabel tituloLabel;
     private JTextField tituloField;
-    private JTextArea descriçãoField;
+    private JTextArea descricaoField;
     private JTextField valorField;
     private JTextField cpfCnpjField;
     private JTextField numNotaFiscalField;
@@ -32,39 +32,97 @@ public class InserirRegistro extends JFrame{
     private JRadioButton custeioRadioButton;
     private JRadioButton investimentoRadioButton;
     private JTextField comprovanteTextField;
-    private JButton buscarButton3;
+    private JButton buscarComprovantesButton;
     private JTextField fotosTextField;
-    private JButton buscarButton1;
+    private JButton buscarFotosButton;
     private JFormattedTextField dataField;
     private JButton abrirButton;
     private JLabel cabecalhoLabel;
+    private JLabel destinacaoField;
     private RegistroService registroService;
     @Setter
     private TelaPrincipal parent;
+    CustomDateTimeFormatter formatter = new CustomDateTimeFormatter();
 
+    /**
+     * Construtor para quando se pretende inserir um registro novo
+     * @param registroService Serviço para salvar no banco de dados
+     * @param tipo Tipo de registro que será salvo. Pode ser Receita ou Despesa
+     */
+    public InserirRegistro(RegistroService registroService, String tipo) {
+        this.registroService = registroService;
+        dataField.setFormatterFactory(new DefaultFormatterFactory(new DateFormatter(new SimpleDateFormat("dd/MM/yyyy"))));
 
+        //Definir Cabeçalho
+        defineCabecalho(tipo);
+
+        //Definir radio buttons. O padrão é ser despesa, então se for receita, vai editar
+        defineRadioButtons(tipo);
+
+        //Adiciona o event listener do botão buscar
+        configuraBuscarbutton();
+        //Adiciona o event listener do botão abrir
+        configuraAbrirButton();
+        //Adiciona o event listener do botão cancelar
+        configuraCancelarButton();
+        //Adiciona o event listener do botão salvar
+        configuraSalvarButton(tipo, formatter.dateFormatter);
+    }
 
     /**
      Construtor quando se pretende editar um reigstro
     * */
     public InserirRegistro(RegistroService registroService, RegistroContabil registroEditando) {
         this.registroService = registroService;
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         dataField.setFormatterFactory(new DefaultFormatterFactory(new DateFormatter(new SimpleDateFormat("dd/MM/yyyy"))));
 
         //Definir Cabecalho
-        defineCabecalho(registroEditando);
+        cabecalhoLabel.setText("Editar Registro");
 
         //Definir radio buttons. O padrão é ser despesa, então se for receita, vai editar
         defineRadioButtons(registroEditando);
 
         //Preencher os campos se o registro ja tiver um ID
-        defineCamposPreenchidos(registroEditando, formatter);
-        //Adiciona os event listeners nos botoes
-        configuraBotoes(registroService, registroEditando, formatter);
+        defineCamposPreenchidos(registroEditando, formatter.dateFormatter);
+
+        //Adiciona o event listener do botão buscar
+        configuraBuscarbutton();
+        //Adiciona o event listener do botão abrir
+        configuraAbrirButton();
+        //Adiciona o event listener do botão cancelar
+        configuraCancelarButton();
+        //Adiciona o event listener do botão salvar
+        configuraSalvarButton(registroEditando, formatter.dateFormatter);
     }
 
-    private void configuraBotoes(RegistroService registroService, RegistroContabil registroEditando, DateTimeFormatter formatter) {
+
+
+    private void configuraCancelarButton() {
+        cancelarButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // Fechar a janela
+                dispose();
+            }
+        });
+    }
+
+    private void configuraAbrirButton() {
+        abrirButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    Desktop.getDesktop().open(new File(pathScanNotaField.getText()));
+                } catch (IOException ex) {
+                    JOptionPane.showMessageDialog(painelEditarRegistro,"Não foi possível abrir o arquivo informado. Talvez ele tenha sido movido","Erro",JOptionPane.ERROR_MESSAGE);
+                } catch (IllegalArgumentException ex) {
+                    JOptionPane.showMessageDialog(painelEditarRegistro,"É necessário informar o caminho do arquivo","Erro",JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        });
+    }
+
+    private void configuraBuscarbutton() {
         buscarButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -77,19 +135,69 @@ public class InserirRegistro extends JFrame{
                 }
             }
         });
-        cancelarButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                // Fechar a janela
-                dispose();
-            }
-        });
+    }
+
+    /**
+     * Configura o botão de salvar quando se estiver criando um registro novo
+     * @param tipo Tipo do registro que será salvo
+     * @param formatter Formatador de LocalDate
+     */
+    private void configuraSalvarButton(String tipo, DateTimeFormatter formatter) {
         salvarButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 //Verificar se algum dos campos está em branco
                 if(tituloField.getText().isEmpty() |
-                        descriçãoField.getText().isEmpty() |
+                        descricaoField.getText().isEmpty() |
+                        dataField.getText().isEmpty() |
+                        valorField.getText().isEmpty() |
+                        (!custeioRadioButton.isSelected() & !investimentoRadioButton.isSelected()) |
+                        cpfCnpjField.getText().isEmpty() |
+                        numNotaFiscalField.getText().isEmpty() |
+                        pathScanNotaField.getText().isEmpty()) {
+
+                    mostraErroPreenchimento();
+
+                }else{
+                    String origem = null;
+                    if(tipo.equals("Receita")) {
+                        if(custeioRadioButton.isSelected()) origem = "Sorteio";
+                        if(investimentoRadioButton.isSelected()) origem = "Rateio";
+                    } else if(tipo.equals("Despesa")) {
+                        if(custeioRadioButton.isSelected()) origem = "Custeio";
+                        if(investimentoRadioButton.isSelected()) origem = "Investimento";
+                    }
+                    RegistroContabil registro = new RegistroContabil(
+                            tituloField.getText(),
+                            descricaoField.getText(),
+                            tipo,
+                            LocalDate.parse(dataField.getText(),formatter),
+                            Double.parseDouble(valorField.getText()),
+                            origem,
+                            cpfCnpjField.getText(),
+                            numNotaFiscalField.getText(),
+                            pathScanNotaField.getText());
+                    //orgArquivosService.copiaArquivos(receita);
+                    registroService.salvarRegistro(registro);
+                    parent.atualizaTabela();
+                    dispose();
+                }
+            }
+        });
+    }
+
+    /**
+     * Configura o botão de salvar quando se estiver editando um registro já criado
+     * @param registroEditando Registro que está sendo editado
+     * @param formatter
+     */
+    private void configuraSalvarButton(RegistroContabil registroEditando, DateTimeFormatter formatter) {
+        salvarButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                //Verificar se algum dos campos está em branco
+                if(tituloField.getText().isEmpty() |
+                        descricaoField.getText().isEmpty() |
                         dataField.getText().isEmpty() |
                         valorField.getText().isEmpty() |
                         (!custeioRadioButton.isSelected() & !investimentoRadioButton.isSelected()) |
@@ -112,7 +220,7 @@ public class InserirRegistro extends JFrame{
 
                     //Substituir os campos do registro conforme modelo
                     registroEditando.setTitulo(tituloField.getText());
-                    registroEditando.setDescricao(descriçãoField.getText());
+                    registroEditando.setDescricao(descricaoField.getText());
                     registroEditando.setData(LocalDate.parse(dataField.getText(), formatter));
                     registroEditando.setValor(Double.parseDouble(valorField.getText()));
                     registroEditando.setOrigemOuDestinacao(destinacao);
@@ -125,21 +233,16 @@ public class InserirRegistro extends JFrame{
                 }
             }
         });
-        abrirButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                try {
-                    Desktop.getDesktop().open(new File(pathScanNotaField.getText()));
-                } catch (IOException ex) {
-                    JOptionPane.showMessageDialog(painelEditarRegistro,"Não foi possível abrir o arquivo informado. Talvez ele tenha sido movido","Erro",JOptionPane.ERROR_MESSAGE);
-                }
-            }
-        });
     }
 
+    /**
+     * Define os campos preenchidos, quando se estiver editando um registro
+     * @param registroEditando Registro que está sendo editado
+     * @param formatter Formatador para LocalDate
+     */
     private void defineCamposPreenchidos(RegistroContabil registroEditando, DateTimeFormatter formatter) {
         this.tituloField.setText(registroEditando.getTitulo());
-        this.descriçãoField.setText(registroEditando.getDescricao());
+        this.descricaoField.setText(registroEditando.getDescricao());
         this.dataField.setText(registroEditando.getData().format(formatter));
         this.valorField.setText(String.valueOf(registroEditando.getValor()));
         //Setar os radio buttons de acordo com o que tiver marcado
@@ -156,23 +259,37 @@ public class InserirRegistro extends JFrame{
         this.pathScanNotaField.setText(registroEditando.getPathScanNotaFiscal());
     }
 
-    private void defineRadioButtons(RegistroContabil registroEditando) {
-        if (registroEditando.getTipo().equals("Receita")) {
-            descriçãoField.setText("Origem");
+    /**
+     * Método para definir a descrição e o tipo de radio buttons quando se está criando um registro novo
+     * @param tipo Tipo de registro, pode ser Receita ou Despesa
+     */
+    private void defineRadioButtons(String tipo) {
+        if (tipo.equals("Receita")) {
+            destinacaoField.setText("Origem");
             custeioRadioButton.setText("Sorteio");
             investimentoRadioButton.setText("Rateio");
         }
     }
 
-    private void defineCabecalho(RegistroContabil registroEditando) {
-        if(registroEditando.getId() != null) {
-            cabecalhoLabel.setText("Editar Registro");
+    /**
+     * Método para definir a descrição eo tipo dos radio buttons, quando se está editando um registro
+     * @param registroEditando Registro que está sendo editado
+     */
 
+    private void defineRadioButtons(RegistroContabil registroEditando) {
+        if (registroEditando.getTipo().equals("Receita")) {
+            destinacaoField.setText("Origem");
+            custeioRadioButton.setText("Sorteio");
+            investimentoRadioButton.setText("Rateio");
         }
-        if(registroEditando.getTipo().equals("Receita")) {
+    }
+
+    private void defineCabecalho(String tipo) {
+
+        if(tipo.equals("Receita")) {
             cabecalhoLabel.setText("Inserir Receita");
         }
-        if(registroEditando.getTipo().equals("Despesa")) {
+        if(tipo.equals("Despesa")) {
             cabecalhoLabel.setText("Inserir Despesa");
 
         }

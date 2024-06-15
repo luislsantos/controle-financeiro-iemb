@@ -2,31 +2,30 @@ package com.example.testefrontiemb.gui;
 
 import com.example.testefrontiemb.models.RegistroContabil;
 import com.example.testefrontiemb.service.CalculadoraService;
+import com.example.testefrontiemb.service.RegistroService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import com.example.testefrontiemb.service.RegistroService;
 
 import javax.swing.*;
-import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.text.DefaultFormatterFactory;
 import javax.swing.text.NumberFormatter;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.math.BigDecimal;
-import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Objects;
 import java.util.prefs.Preferences;
 
 @Component
@@ -76,7 +75,7 @@ public class TelaPrincipal extends JFrame{
         inserirDespesaButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                InserirDespesa telaInserirDespesa = new InserirDespesa(registroService);
+                InserirRegistro telaInserirDespesa = new InserirRegistro(registroService,"Despesa");
                 telaInserirDespesa.setParent(TelaPrincipal.this);
                 telaInserirDespesa.exibir(painel);
             }
@@ -97,7 +96,7 @@ public class TelaPrincipal extends JFrame{
         inserirReceitaButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                InserirReceita telaInserirDespesa = new InserirReceita(registroService);
+                InserirRegistro telaInserirDespesa = new InserirRegistro(registroService,"Receita");
                 telaInserirDespesa.setParent(TelaPrincipal.this);
                 telaInserirDespesa.exibir(painel);
             }
@@ -108,7 +107,7 @@ public class TelaPrincipal extends JFrame{
                 if (e.getClickCount() == 2) {
                     RegistroContabil registroEditar = registros.get(table.getSelectedRow());
                     System.out.println("É o registro de nome: " + registroEditar.getTitulo());
-                    EditarRegistro telaEditarRegistro = new EditarRegistro(registroService,registroEditar);
+                    InserirRegistro telaEditarRegistro = new InserirRegistro(registroService,registroEditar);
                     telaEditarRegistro.setParent(TelaPrincipal.this);
                     telaEditarRegistro.exibir(painel);
                 }

@@ -1,5 +1,6 @@
 package com.example.testefrontiemb.gui;
 
+import com.example.testefrontiemb.components.CustomTableCellRenderer;
 import com.example.testefrontiemb.models.RegistroContabil;
 import com.example.testefrontiemb.service.CalculadoraService;
 import com.example.testefrontiemb.service.RegistroService;

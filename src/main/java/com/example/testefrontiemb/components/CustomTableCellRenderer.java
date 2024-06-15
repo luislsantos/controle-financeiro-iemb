@@ -1,4 +1,4 @@
-package com.example.testefrontiemb.gui;
+package com.example.testefrontiemb.components;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;

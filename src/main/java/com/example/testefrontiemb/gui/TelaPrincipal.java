@@ -2,9 +2,12 @@ package com.example.testefrontiemb.gui;
 
 import com.example.testefrontiemb.components.CustomDecimalFormatter;
 import com.example.testefrontiemb.components.CustomTableCellRenderer;
+import com.example.testefrontiemb.models.PeriodoPrestacao;
 import com.example.testefrontiemb.models.RegistroContabil;
 import com.example.testefrontiemb.service.CalculadoraService;
+import com.example.testefrontiemb.service.PeriodoService;
 import com.example.testefrontiemb.service.RegistroService;
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -13,10 +16,7 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.text.DefaultFormatterFactory;
 import javax.swing.text.NumberFormatter;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.event.*;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -28,11 +28,13 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.prefs.Preferences;
 
 @Component
 public class TelaPrincipal extends JFrame{
     public static final String[] COLUNAS = new String[]{"ID", "TÍTULO", "DESCRIÇÃO", "TIPO", "DATA", "VALOR", "DESTINAÇÃO", "CPF/CNPJ", "Nº Nota Fiscal"};
+    @Getter
     private JComboBox anoComboBox;
     private JButton novoAnoButton;
     private JTextField pesquisaField;
@@ -58,18 +60,33 @@ public class TelaPrincipal extends JFrame{
     private JLabel faltaGastarCustLabel;
     private JLabel faltaGastarInvestLabel;
     private JButton definirPastaDeArmazenamentoButton;
+    @Getter
+    private JComboBox semestreComboBox;
     private RegistroService registroService;
+   @Autowired
+    private PeriodoService periodoService;
     ArrayList<RegistroContabil> registros;
+    ArrayList<PeriodoPrestacao> periodos;
     public static final String FIRST_TIME_SETUP_PREF = "first-time-setup";
     public static final String PASTA_DESTINO_PREF = "pasta-destino";
     Preferences prefs = Preferences.userRoot().node("Contabilidade-IEMB");
     CustomDecimalFormatter decimalFormatter;
+    int anoRegistro;
+    int semestreRegistro;
     @Autowired
-    public TelaPrincipal(RegistroService registroService) {
+    public TelaPrincipal(RegistroService registroService, PeriodoService periodoService) {
         this.registroService = registroService;
+        this.periodoService = periodoService;
         table.setFont(new Font("Serif", Font.BOLD, 16)); //Configura o tamanho da fonte
         table.setRowHeight(30);
         table.setDefaultRenderer(Object.class,new CustomTableCellRenderer());
+
+        if(anoComboBox.getSelectedItem() == null) {
+            anoComboBox.addItem(1967);;//Para testes, remover em produção
+
+        }
+        semestreComboBox.addItem(1);
+        semestreComboBox.addItem(2);
 
         atualizaTabela();
 
@@ -79,7 +96,9 @@ public class TelaPrincipal extends JFrame{
         inserirDespesaButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                InserirRegistro telaInserirDespesa = new InserirRegistro(registroService,"Despesa");
+                //Verificar se há um ano setado
+                InserirRegistro telaInserirDespesa = new InserirRegistro(registroService,
+                        "Despesa", anoRegistro,semestreRegistro);
                 telaInserirDespesa.setParent(TelaPrincipal.this);
                 telaInserirDespesa.exibir(painel);
             }
@@ -87,20 +106,29 @@ public class TelaPrincipal extends JFrame{
         novoAnoButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                atualizaTabela();
-                try {
-                    Desktop.getDesktop().open(new File("D:\\Imagens\\Screenshots\\Captura de tela 2023-06-25 195406.png"));
-                } catch (IOException ex) {
-                    throw new RuntimeException(ex);
-                }
-                //Desktop.getDesktop().browseFileDirectory(new File("D:\\Imagens\\Screenshots\\Captura de tela 2023-06-25 195406.png"));
+                    int novoAno = 0;
+                    PeriodoPrestacao periodoNovo = null;
+                    try {
+                        novoAno = Integer.parseInt(JOptionPane.showInputDialog("Insira o novo ano para cadastrar:"));
+                        periodoNovo = new PeriodoPrestacao(novoAno,1);
+                    } catch (NumberFormatException ex) {
+                        JOptionPane.showMessageDialog(TelaPrincipal.this,
+                                "Insira um ano válido","Erro",JOptionPane.ERROR_MESSAGE);
+                    }
+                    periodoService.salvarPeriodo(periodoNovo);
+                    periodoNovo = new PeriodoPrestacao(novoAno,2);
+                    System.out.println("Vai tentar salvar o 2º período");
+                    periodoService.salvarPeriodo(periodoNovo);
+                    atualizaComboBox();
+                    atualizaTabela();
             }
         });
 
         inserirReceitaButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                InserirRegistro telaInserirDespesa = new InserirRegistro(registroService,"Receita");
+                //Verificar se há um ano setado
+                InserirRegistro telaInserirDespesa = new InserirRegistro(registroService,"Receita", anoRegistro, semestreRegistro);
                 telaInserirDespesa.setParent(TelaPrincipal.this);
                 telaInserirDespesa.exibir(painel);
             }
@@ -154,6 +182,41 @@ public class TelaPrincipal extends JFrame{
                 }
                 }
         });
+        anoComboBox.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                if (e.getStateChange() == ItemEvent.SELECTED){
+                    System.out.println("Selecionou o ano " + anoComboBox.getSelectedItem() + ".");
+                    semestreComboBox.setSelectedIndex(0);
+                    atualizaTabela();
+                }
+            }
+        });
+        semestreComboBox.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                if (e.getStateChange() == ItemEvent.SELECTED) {
+                    System.out.println("Seleciou o " + semestreComboBox.getSelectedItem() + "semestre.");
+                    atualizaTabela();
+                }
+            }
+        });
+        table.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyReleased(KeyEvent e) {
+                if(e.getKeyCode() == KeyEvent.VK_DELETE) {
+                    RegistroContabil registroDeletar = registros.get(table.getSelectedRow());
+                    int opcao = JOptionPane.showConfirmDialog(TelaPrincipal.this,
+                            "Você tem certeza que seja deletar o registro de título: " +
+                            registroDeletar.getTitulo() + "?\n" +
+                                    "Esta ação é PERMANENTE e não pode ser desfeita!","Deletar Registro",JOptionPane.ERROR_MESSAGE);
+                    if(opcao == JOptionPane.YES_OPTION) {
+                        registroService.deletarRegistro(registroDeletar);
+                        atualizaTabela();
+                    }
+                }
+            }
+        });
     }
 
     private void firstTimeSetup() {
@@ -199,8 +262,12 @@ public class TelaPrincipal extends JFrame{
     }
 
     public void atualizaTabela() {
-        registroService.lerRegistrosParaTeste();
-        registros = registroService.lerTudo();
+        //Pegar o ano que deve ser utilizado para buscas
+        anoRegistro = (int) anoComboBox.getSelectedItem();
+        semestreRegistro = (int) semestreComboBox.getSelectedItem();
+
+        // Puxar registros para povoar a tabela
+        registros = registroService.buscaPorAnoESemestre(anoRegistro,semestreRegistro);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
         DefaultTableModel modelo = new DefaultTableModel(COLUNAS,0){
@@ -226,11 +293,22 @@ public class TelaPrincipal extends JFrame{
         atualizaCalculos(registros);
     }
 
+    private void atualizaComboBox() {
+        //Zerar a combobox
+        anoComboBox.removeAllItems();
+
+        //Atualizar os períodos de ano/semestre disponíveis
+        periodos = periodoService.pegarUmPorSemestre();
+        for(PeriodoPrestacao periodo : periodos){
+            anoComboBox.addItem(periodo.getAno());
+        }
+    }
+
     private void atualizaCalculos(ArrayList<RegistroContabil> registros) {
         double limiteCusteio = CalculadoraService.calculaLimiteCusteio(registros);
         double limiteInvestimento = CalculadoraService.calculaLimiteInvestimento(registros);
-        valorCustField.setText(String.valueOf(limiteCusteio));
-        valorInvestField.setText(String.valueOf(limiteInvestimento));
+        valorCustField.setText("R$ " + decimalFormatter.converteParaVirgula(limiteCusteio));
+        valorInvestField.setText("R$ " + decimalFormatter.converteParaVirgula(limiteInvestimento));
     }
 
     public void exibir() {
@@ -239,6 +317,7 @@ public class TelaPrincipal extends JFrame{
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setSize(1280, 720);
         this.setLocationRelativeTo(null);
+        table.getTableHeader().setReorderingAllowed(false);
         this.pack();
         this.setVisible(true);
     }
@@ -272,8 +351,8 @@ public class TelaPrincipal extends JFrame{
         valorInvestField = createCustomFormattedTextField();
         valorCustField = createCustomFormattedTextField();
         // Mock data para a combobox de anos
-        Integer[] anosPlaceholder = {2020,2021,2022,2023,2024};
-        anoComboBox = new JComboBox<>(anosPlaceholder);//Combo Box dos anos
+        //Integer[] anosPlaceholder = {2020,2021,2022,2023,2024};
+        //anoComboBox = new JComboBox<>(anosPlaceholder);//Combo Box dos anos
 
         // Mock data para a tabela
         table = new JTable();

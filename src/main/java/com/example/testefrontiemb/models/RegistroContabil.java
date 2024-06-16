@@ -31,6 +31,10 @@ public class RegistroContabil {
     private String numNotaFiscal;
     @Getter @Setter
     private String pathScanNotaFiscal;
+    @Getter @Setter
+    private int anoPrestacao;
+    @Getter @Setter
+    private int semestrePrestacao;
 
     protected RegistroContabil(String titulo, String descricao, String tipo, LocalDate data, Double valor) {
         this.titulo = titulo;
@@ -40,7 +44,7 @@ public class RegistroContabil {
         this.valor = valor;
     }
 
-    public RegistroContabil(String titulo, String descricao, String tipo, LocalDate data, Double valor, String origemOuDestinacao, String cpfCnpj, String numNotaFiscal, String pathScanNotaFiscal) {
+    public RegistroContabil(String titulo, String descricao, String tipo, LocalDate data, Double valor, String origemOuDestinacao, String cpfCnpj, String numNotaFiscal, String pathScanNotaFiscal, int anoPrestacao, int semestrePrestacao) {
         this.titulo = titulo;
         this.descricao = descricao;
         this.tipo = tipo;
@@ -50,6 +54,8 @@ public class RegistroContabil {
         this.cpfCnpj = cpfCnpj;
         this.numNotaFiscal = numNotaFiscal;
         this.pathScanNotaFiscal = pathScanNotaFiscal;
+        this.anoPrestacao = anoPrestacao;
+        this.semestrePrestacao = semestrePrestacao;
     }
 
     protected RegistroContabil() {

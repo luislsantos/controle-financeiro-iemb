@@ -53,7 +53,7 @@ public class InserirRegistro extends JFrame{
      * @param registroService Serviço para salvar no banco de dados
      * @param tipo Tipo de registro que será salvo. Pode ser Receita ou Despesa
      */
-    public InserirRegistro(RegistroService registroService, String tipo) {
+    public InserirRegistro(RegistroService registroService, String tipo, int anoRegistro, int semestreRegistro) {
         this.registroService = registroService;
         dataField.setFormatterFactory(new DefaultFormatterFactory(new DateFormatter(new SimpleDateFormat("dd/MM/yyyy"))));
 
@@ -70,7 +70,7 @@ public class InserirRegistro extends JFrame{
         //Adiciona o event listener do botão cancelar
         configuraCancelarButton();
         //Adiciona o event listener do botão salvar
-        configuraSalvarButton(tipo, formatter.dateFormatter);
+        configuraSalvarButton(tipo, formatter.dateFormatter, anoRegistro, semestreRegistro);
     }
 
     /**
@@ -146,7 +146,7 @@ public class InserirRegistro extends JFrame{
      * @param tipo Tipo do registro que será salvo
      * @param formatter Formatador de LocalDate
      */
-    private void configuraSalvarButton(String tipo, DateTimeFormatter formatter) {
+    private void configuraSalvarButton(String tipo, DateTimeFormatter formatter, int anoRegistro, int semestreRegistro) {
         salvarButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -182,7 +182,9 @@ public class InserirRegistro extends JFrame{
                                 origem,
                                 cpfCnpjField.getText(),
                                 numNotaFiscalField.getText(),
-                                pathScanNotaField.getText());
+                                pathScanNotaField.getText(),
+                                anoRegistro,
+                                semestreRegistro);//Temporário, depois corrigir
                     } catch (ParseException ex) {
                         JOptionPane.showMessageDialog(parent,"Erro ao registrar os campos. Certifique-se que todos, \n" +
                                 "principalmente, os números, foram preenchidos corretamente" +

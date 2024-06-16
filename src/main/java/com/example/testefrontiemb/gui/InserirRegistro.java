@@ -42,6 +42,8 @@ public class InserirRegistro extends JFrame{
     private JButton abrirButton;
     private JLabel cabecalhoLabel;
     private JLabel destinacaoField;
+    private JButton abrirComprovanteButton;
+    private JButton abrirFotosButton;
     private RegistroService registroService;
     @Setter
     private TelaPrincipal parent;
@@ -66,7 +68,7 @@ public class InserirRegistro extends JFrame{
         //Adiciona o event listener do botão buscar
         configuraBuscarbutton();
         //Adiciona o event listener do botão abrir
-        configuraAbrirButton();
+        configuraAbrirButtons();
         //Adiciona o event listener do botão cancelar
         configuraCancelarButton();
         //Adiciona o event listener do botão salvar
@@ -92,7 +94,7 @@ public class InserirRegistro extends JFrame{
         //Adiciona o event listener do botão buscar
         configuraBuscarbutton();
         //Adiciona o event listener do botão abrir
-        configuraAbrirButton();
+        configuraAbrirButtons();
         //Adiciona o event listener do botão cancelar
         configuraCancelarButton();
         //Adiciona o event listener do botão salvar
@@ -111,12 +113,41 @@ public class InserirRegistro extends JFrame{
         });
     }
 
-    private void configuraAbrirButton() {
+    private void configuraAbrirButtons() {
+        //Botão de abrir a nota Fiscal
         abrirButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
                     Desktop.getDesktop().open(new File(pathScanNotaField.getText()));
+                } catch (IOException ex) {
+                    JOptionPane.showMessageDialog(painelEditarRegistro,"Não foi possível abrir o arquivo informado. Talvez ele tenha sido movido","Erro",JOptionPane.ERROR_MESSAGE);
+                } catch (IllegalArgumentException ex) {
+                    JOptionPane.showMessageDialog(painelEditarRegistro,"É necessário informar o caminho do arquivo","Erro",JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        });
+
+        //Botão de abrir o comprovante
+        abrirComprovanteButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    Desktop.getDesktop().open(new File(comprovanteTextField.getText()));
+                } catch (IOException ex) {
+                    JOptionPane.showMessageDialog(painelEditarRegistro,"Não foi possível abrir o arquivo informado. Talvez ele tenha sido movido","Erro",JOptionPane.ERROR_MESSAGE);
+                } catch (IllegalArgumentException ex) {
+                    JOptionPane.showMessageDialog(painelEditarRegistro,"É necessário informar o caminho do arquivo","Erro",JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        });
+
+        //Botão de abrir as fotos
+        abrirFotosButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    Desktop.getDesktop().open(new File(fotosTextField.getText()));
                 } catch (IOException ex) {
                     JOptionPane.showMessageDialog(painelEditarRegistro,"Não foi possível abrir o arquivo informado. Talvez ele tenha sido movido","Erro",JOptionPane.ERROR_MESSAGE);
                 } catch (IllegalArgumentException ex) {
@@ -139,6 +170,32 @@ public class InserirRegistro extends JFrame{
                 }
             }
         });
+        //Configura o botão de buscar comprovantes
+        buscarComprovantesButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                JFileChooser fileChooser = new JFileChooser();
+                FileNameExtensionFilter filter = new FileNameExtensionFilter("Arquivos PDF, JPEG, PNG ou DOCX", "pdf", "jpg", "jpeg", "png", "docx");
+                fileChooser.setFileFilter(filter);
+                int returnVal = fileChooser.showOpenDialog(painelEditarRegistro);
+                if(returnVal == JFileChooser.APPROVE_OPTION) {
+                    comprovanteTextField.setText(fileChooser.getSelectedFile().getAbsolutePath());
+                }
+            }
+        });
+
+        buscarFotosButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                JFileChooser fileChooser = new JFileChooser();
+                FileNameExtensionFilter filter = new FileNameExtensionFilter("Arquivos PDF, JPEG, PNG ou DOCX", "pdf", "jpg", "jpeg", "png", "docx");
+                fileChooser.setFileFilter(filter);
+                int returnVal = fileChooser.showOpenDialog(painelEditarRegistro);
+                if(returnVal == JFileChooser.APPROVE_OPTION) {
+                    fotosTextField.setText(fileChooser.getSelectedFile().getAbsolutePath());
+                }
+            }
+        });
     }
 
     /**
@@ -157,8 +214,8 @@ public class InserirRegistro extends JFrame{
                         valorField.getText().isEmpty() |
                         (!custeioRadioButton.isSelected() & !investimentoRadioButton.isSelected()) |
                         cpfCnpjField.getText().isEmpty() |
-                        numNotaFiscalField.getText().isEmpty() |
-                        pathScanNotaField.getText().isEmpty()) {
+                        numNotaFiscalField.getText().isEmpty() /*|
+                        pathScanNotaField.getText().isEmpty()*/) {
 
                     mostraErroPreenchimento();
 
@@ -184,7 +241,9 @@ public class InserirRegistro extends JFrame{
                                 numNotaFiscalField.getText(),
                                 pathScanNotaField.getText(),
                                 anoRegistro,
-                                semestreRegistro);//Temporário, depois corrigir
+                                semestreRegistro,
+                                comprovanteTextField.getText(),
+                                fotosTextField.getText());//Temporário, depois corrigir
                     } catch (ParseException ex) {
                         JOptionPane.showMessageDialog(parent,"Erro ao registrar os campos. Certifique-se que todos, \n" +
                                 "principalmente, os números, foram preenchidos corretamente" +
@@ -245,6 +304,8 @@ public class InserirRegistro extends JFrame{
                         registroEditando.setCpfCnpj(cpfCnpjField.getText());
                         registroEditando.setNumNotaFiscal(numNotaFiscalField.getText());
                         registroEditando.setPathScanNotaFiscal(pathScanNotaField.getText());
+                        registroEditando.setPathComprovantes(comprovanteTextField.getText());
+                        registroEditando.setPathFotos(fotosTextField.getText());
                     } catch (ParseException ex) {
                         JOptionPane.showMessageDialog(parent,"Erro ao registrar os campos. Certifique-se que todos, \n" +
                                 "principalmente, os números, foram preenchidos corretamente." +
@@ -281,6 +342,8 @@ public class InserirRegistro extends JFrame{
         this.cpfCnpjField.setText(registroEditando.getCpfCnpj());
         this.numNotaFiscalField.setText(registroEditando.getNumNotaFiscal());
         this.pathScanNotaField.setText(registroEditando.getPathScanNotaFiscal());
+        this.comprovanteTextField.setText(registroEditando.getPathComprovantes());
+        this.fotosTextField.setText(registroEditando.getPathFotos());
     }
 
     /**

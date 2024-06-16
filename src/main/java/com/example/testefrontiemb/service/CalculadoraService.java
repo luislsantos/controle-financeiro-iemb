@@ -19,6 +19,13 @@ public class CalculadoraService {
                     limiteCusteio += registro.getValor();
                 }
             }
+            if(registro.getTipo().equals("Despesa")) {
+                if(registro.getOrigemOuDestinacao().equals("Custeio")) {
+                    limiteCusteio -= registro.getValor();
+                } else if (registro.getOrigemOuDestinacao().equals("Investimento")) {
+                    limiteCusteio -= registro.getValor();
+                }
+            }
         }
         return limiteCusteio;
     }
@@ -28,6 +35,13 @@ public class CalculadoraService {
         for(RegistroContabil registro:registros) {
             if(registro.getTipo().equals("Receita")) {
                 limiteInvestimento += registro.getValor();
+            }
+            if(registro.getTipo().equals("Despesa")) {
+                if(registro.getOrigemOuDestinacao().equals("Custeio")) {
+                    limiteInvestimento -= registro.getValor();
+                }
+            } else if (registro.getOrigemOuDestinacao().equals("Investimento")) {
+                limiteInvestimento -= registro.getValor();
             }
         }
         return limiteInvestimento;

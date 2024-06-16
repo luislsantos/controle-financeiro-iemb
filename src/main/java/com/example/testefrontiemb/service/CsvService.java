@@ -29,8 +29,6 @@ public class CsvService {
         try (CSVPrinter printer = new CSVPrinter(writter, CSVFormat.EXCEL)) {
             printer.printRecord(cabecalhos);
             for(RegistroContabil registro : registros) {
-                System.out.println("Registro guardado: " + registro.toStringCsv());
-//                printer.printRecord(registro.toStringCsv());
                 printer.printRecord(registro.getId(),
                         registro.getTipo(),
                         registro.getDescricao(),
@@ -42,7 +40,9 @@ public class CsvService {
                         registro.getNumNotaFiscal(),
                         registro.getPathScanNotaFiscal(),
                         registro.getAnoPrestacao(),
-                        registro.getSemestrePrestacao());
+                        registro.getSemestrePrestacao(),
+                        registro.getPathComprovantes(),
+                        registro.getPathFotos());
             }
         } catch (IOException ex) {
             ex.printStackTrace();

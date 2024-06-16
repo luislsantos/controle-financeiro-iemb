@@ -35,21 +35,11 @@ public class RegistroContabil {
     private int anoPrestacao;
     @Getter @Setter
     private int semestrePrestacao;
+    @Getter @Setter
+    private String pathComprovantes;
+    @Getter @Setter
+    private String pathFotos;
 
-    public String toStringCsv() {
-        return id +
-                "," + titulo +
-                "," + descricao +
-                "," + tipo +
-                "," + data +
-                "," + valor +
-                "," + origemOuDestinacao +
-                "," + cpfCnpj +
-                "," + numNotaFiscal +
-                "," + pathScanNotaFiscal +
-                "," + anoPrestacao +
-                "," + semestrePrestacao;
-    }
 
     protected RegistroContabil(String titulo, String descricao, String tipo, LocalDate data, Double valor) {
         this.titulo = titulo;
@@ -59,7 +49,7 @@ public class RegistroContabil {
         this.valor = valor;
     }
 
-    public RegistroContabil(String titulo, String descricao, String tipo, LocalDate data, Double valor, String origemOuDestinacao, String cpfCnpj, String numNotaFiscal, String pathScanNotaFiscal, int anoPrestacao, int semestrePrestacao) {
+    public RegistroContabil(String titulo, String descricao, String tipo, LocalDate data, Double valor, String origemOuDestinacao, String cpfCnpj, String numNotaFiscal, String pathScanNotaFiscal, int anoPrestacao, int semestrePrestacao, String pathComprovantes, String pathFotos) {
         this.titulo = titulo;
         this.descricao = descricao;
         this.tipo = tipo;
@@ -71,6 +61,8 @@ public class RegistroContabil {
         this.pathScanNotaFiscal = pathScanNotaFiscal;
         this.anoPrestacao = anoPrestacao;
         this.semestrePrestacao = semestrePrestacao;
+        this.pathComprovantes = pathComprovantes;
+        this.pathFotos = pathFotos;
     }
 
     protected RegistroContabil() {

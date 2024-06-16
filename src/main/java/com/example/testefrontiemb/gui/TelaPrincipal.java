@@ -5,9 +5,11 @@ import com.example.testefrontiemb.components.CustomTableCellRenderer;
 import com.example.testefrontiemb.models.PeriodoPrestacao;
 import com.example.testefrontiemb.models.RegistroContabil;
 import com.example.testefrontiemb.service.CalculadoraService;
+import com.example.testefrontiemb.service.OrgArquivosService;
 import com.example.testefrontiemb.service.PeriodoService;
 import com.example.testefrontiemb.service.RegistroService;
 import lombok.Getter;
+import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -102,7 +104,7 @@ public class TelaPrincipal extends JFrame{
         atualizaTabela();
 
         exibir();
-        //prefs.putBoolean(FIRST_TIME_SETUP_PREF,true); // Para fins de teste do first time setup. Remover em produção
+        prefs.putBoolean(FIRST_TIME_SETUP_PREF,true); // Para fins de teste do first time setup. Remover em produção
         if(prefs.getBoolean(FIRST_TIME_SETUP_PREF,true)) firstTimeSetup();
 
         //Começa a inserir os listeners dos botões
@@ -161,38 +163,59 @@ public class TelaPrincipal extends JFrame{
         definirPastaDeArmazenamentoButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                String pathPastaDestinoNova = selecionaPasta();
-                if(!pathPastaDestinoNova.isEmpty()) { //Se conseguiu pegar a pasta nova e ela está vazia
-                    final File PASTA_ATUAL = new File(prefs.get(PASTA_DESTINO_PREF,null)); //Instanciar a pasta atual para verificar se existem arquivos na pasta e, se existirem, copiar para a pasta nova
-                    if(PASTA_ATUAL.listFiles().length == 0) { //Verificar se a pasta está vazia
-                        prefs.put(PASTA_DESTINO_PREF,pathPastaDestinoNova);
-                    } else { //Caso a pasta não esteja vazia
-                        int opcao = JOptionPane.showConfirmDialog(painel,"Parece que já existem objetos na pasta de destino atual. Você deseja mover eles para o novo destino?","Atenção",JOptionPane.YES_NO_CANCEL_OPTION);
-                        if(opcao == JOptionPane.YES_OPTION) {// Se o usuário quiser copiar
-                            ArrayList<String> arquivosNaoCopiados = new ArrayList<>();
-                            for (File arquivo : PASTA_ATUAL.listFiles()) {
-                                try {
-                                    Files.copy(Path.of(arquivo.getAbsolutePath()),Path.of(pathPastaDestinoNova +"\\" + arquivo.getName()));
-                                    System.out.println("Copiado" + arquivo.getName());
-                                } catch (IOException ex) {
-                                    arquivosNaoCopiados.add(arquivo.getName());
-                                    ex.printStackTrace();
-                                }
-                            }
-                            if(arquivosNaoCopiados.isEmpty()) {
-                                JOptionPane.showMessageDialog(painel,"Todos os arquivos foram copiados com sucesso","Sucesso",JOptionPane.INFORMATION_MESSAGE);
-                                prefs.put(PASTA_DESTINO_PREF,pathPastaDestinoNova);
-                            } else {
-                                JOptionPane.showMessageDialog(painel,"Não foi possível copiar os seguintes arquivos: " + arquivosNaoCopiados,"Erro",JOptionPane.ERROR_MESSAGE);
-                            }
+                //Mostra a pasta atual e confirma com o usuário se ele quer modificar ela
+                int opcao = JOptionPane.showConfirmDialog(painel,"Sua pasta de armazenamento atual é:\n" +
+                        prefs.get(PASTA_DESTINO_PREF,new JFileChooser().getFileSystemView().getDefaultDirectory().toString()) +
+                        "\nVocê gostaria de mudar o local de armazenamento dos anexos?");
 
-                        } else if (opcao == JOptionPane.NO_OPTION) {
+                //Se ele disser que quer modificar
+                if (opcao == JOptionPane.YES_OPTION) {
+                    //Seleciona a pasta nova
+                    String pathPastaDestinoNova = selecionaPasta();
+                    //Verifica se a pasta nova é uma pasta vazia
+                    if(!pathPastaDestinoNova.isEmpty()) { //Se conseguiu pegar a pasta nova e ela está vazia
+
+                        //Cria instância da pasta atual
+                        final File PASTA_ATUAL = new File(prefs.get(PASTA_DESTINO_PREF,null)); //Instanciar a pasta atual para verificar se existem arquivos na pasta e, se existirem, copiar para a pasta nova
+
+                        //Verifica se a pasta atual estava vazia
+                        if(PASTA_ATUAL.listFiles().length == 0) { //Verificar se a pasta está vazia
+
+                            //Se a atual está vazia, coloca a pasta nova nas configurações
                             prefs.put(PASTA_DESTINO_PREF,pathPastaDestinoNova);
+
+                        } else { //Caso a pasta não esteja vazia
+                            //Mensagem perguntando se quer copiar os arquivos
+                            opcao = JOptionPane.showConfirmDialog(painel,"Parece que já existem objetos na pasta de destino atual. " +
+                                    "\nVocê deseja mover eles para o novo destino?" +
+                                    "\nVocê ainda terá de reassociar cada registro com a sua respectiva nota","Atenção",JOptionPane.YES_NO_CANCEL_OPTION);
+
+                            //Caso o usuário queira copiar
+                            if(opcao == JOptionPane.YES_OPTION) {
+                                //Cria um objeto "File" da pasta nova
+                                final File FILE_PASTA_DESTINO_NOVA = new File(pathPastaDestinoNova);
+
+                                try {
+                                    //Tenta copiar todos os conteúdos para a pasta nova
+                                    FileUtils.copyDirectory(PASTA_ATUAL,FILE_PASTA_DESTINO_NOVA);
+                                } catch (IOException ex) {
+                                    JOptionPane.showMessageDialog(painel,"Não foi possível copiar os conteúdos da pasta atual na pasta nova." +
+                                            "\nPor segurança,nenhuma mudança foi feita nas duas configurações.","Erro",JOptionPane.ERROR_MESSAGE);
+                                }
+
+                                //Caso o usuário não queira copiar
+                            } else if (opcao == JOptionPane.NO_OPTION) {
+                                //Só coloca a pasta nova nas configurações
+                                prefs.put(PASTA_DESTINO_PREF,pathPastaDestinoNova);
+                            }
                         }
+                    } else { //Se a pasta não estiver vazia
+                        JOptionPane.showMessageDialog(painel, "A pasta selecionada não está vazia. " +
+                                "\nPor favor selecione uma pasta vazia para continuar","Erro", JOptionPane.ERROR_MESSAGE);
                     }
-                } else { //Se a pasta estiver vazia
-                    JOptionPane.showMessageDialog(painel, "Não foi possível acessar a pasta selecionada", "ERRO", JOptionPane.ERROR_MESSAGE);
                 }
+
+
                 }
         });
         anoComboBox.addItemListener(new ItemListener() {
@@ -232,6 +255,16 @@ public class TelaPrincipal extends JFrame{
                                     "Esta ação é PERMANENTE e não pode ser desfeita!","Deletar Registro",JOptionPane.ERROR_MESSAGE);
                     if(opcao == JOptionPane.YES_OPTION) {
                         registroService.deletarRegistro(registroDeletar);
+                        try {
+                            OrgArquivosService.deletaArquivos(registroDeletar);
+                        } catch (IOException ex) {
+                            JOptionPane.showMessageDialog(painel,"Não foi possível deletaar os arquivos associados. " +
+                                    "\nÉ necessário que você apague os arquivos manualmente. A localização deles é:" +
+                                    "\nNota fiscal: " + registroDeletar.getPathScanNotaFiscal() +
+                                    "\nComprovante: "+ registroDeletar.getPathComprovantes() +
+                                    "\nFotos: " + registroDeletar.getPathFotos(),
+                                    "Erro ao deletar aquivos",JOptionPane.ERROR_MESSAGE);
+                        }
                         atualizaTabela();
                     }
                 }

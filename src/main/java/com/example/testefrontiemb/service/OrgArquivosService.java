@@ -18,7 +18,7 @@ public class OrgArquivosService {
     public static void copiaArquivos(RegistroContabil registro) {
         Preferences prefs = Preferences.userRoot().node("Contabilidade-IEMB");
         String caminhoDestinoArquivo = prefs.get("pasta-destino", new JFileChooser().getFileSystemView().getDefaultDirectory().toString())
-                + "\\" + registro.getData().getYear() + "\\"
+                + "\\" + registro.getAnoPrestacao() + "\\" + registro.getSemestrePrestacao() + "º Semestre" + "\\"
                + registro.getTipo() + "s" + "\\" + registro.getOrigemOuDestinacao()+ "s" + "\\"
                + registro.getId() + "-" + registro.getTitulo() + " ("
                 + registro.getData().getDayOfMonth() + "-"

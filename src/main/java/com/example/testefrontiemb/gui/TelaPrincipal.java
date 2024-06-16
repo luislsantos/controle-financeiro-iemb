@@ -12,7 +12,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableRowSorter;
 import javax.swing.text.DefaultFormatterFactory;
 import javax.swing.text.NumberFormatter;
 import java.awt.*;
@@ -69,10 +72,14 @@ public class TelaPrincipal extends JFrame{
     ArrayList<PeriodoPrestacao> periodos;
     public static final String FIRST_TIME_SETUP_PREF = "first-time-setup";
     public static final String PASTA_DESTINO_PREF = "pasta-destino";
+    public static final String ULTIMO_ANO_PREST_VISUALIZADO = "ultimo-ano-pref";
+    public static final String ULTIMO_SEMESTRE_PREST_VISUALIZADO = "ultimo-semestre-pref";
     Preferences prefs = Preferences.userRoot().node("Contabilidade-IEMB");
     CustomDecimalFormatter decimalFormatter;
     int anoRegistro;
     int semestreRegistro;
+    TableRowSorter<DefaultTableModel> sorter;
+
     @Autowired
     public TelaPrincipal(RegistroService registroService, PeriodoService periodoService) {
         this.registroService = registroService;
@@ -81,6 +88,8 @@ public class TelaPrincipal extends JFrame{
         table.setRowHeight(30);
         table.setDefaultRenderer(Object.class,new CustomTableCellRenderer());
 
+        //Carrega os anos que estão no Banco de dados. Se não carregar nada, coloca 1967
+        atualizaComboBox();
         if(anoComboBox.getSelectedItem() == null) {
             anoComboBox.addItem(1967);;//Para testes, remover em produção
 
@@ -88,11 +97,16 @@ public class TelaPrincipal extends JFrame{
         semestreComboBox.addItem(1);
         semestreComboBox.addItem(2);
 
+        anoComboBox.setSelectedItem(Integer.parseInt(prefs.get(ULTIMO_ANO_PREST_VISUALIZADO,"1967")));
+        semestreComboBox.setSelectedItem(Integer.parseInt(prefs.get(ULTIMO_SEMESTRE_PREST_VISUALIZADO,"1")));
+
         atualizaTabela();
 
         exibir();
         //prefs.putBoolean(FIRST_TIME_SETUP_PREF,true); // Para fins de teste do first time setup. Remover em produção
         if(prefs.getBoolean(FIRST_TIME_SETUP_PREF,true)) firstTimeSetup();
+
+        //Começa a inserir os listeners dos botões
         inserirDespesaButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -188,19 +202,26 @@ public class TelaPrincipal extends JFrame{
                 if (e.getStateChange() == ItemEvent.SELECTED){
                     System.out.println("Selecionou o ano " + anoComboBox.getSelectedItem() + ".");
                     semestreComboBox.setSelectedIndex(0);
+                    prefs.put(ULTIMO_ANO_PREST_VISUALIZADO,String.valueOf(anoComboBox.getSelectedItem()));
+                    prefs.put(ULTIMO_SEMESTRE_PREST_VISUALIZADO,String.valueOf(semestreComboBox.getSelectedItem()));
                     atualizaTabela();
                 }
             }
         });
+
+        //Listener para se o usuário selecionar outro semestre
         semestreComboBox.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent e) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     System.out.println("Seleciou o " + semestreComboBox.getSelectedItem() + "semestre.");
                     atualizaTabela();
+                    prefs.put(ULTIMO_SEMESTRE_PREST_VISUALIZADO,String.valueOf(semestreComboBox.getSelectedItem()));
                 }
             }
         });
+
+        //Listener para se o usuário apertar delete selecionando a tabela
         table.addKeyListener(new KeyAdapter() {
             @Override
             public void keyReleased(KeyEvent e) {
@@ -214,6 +235,33 @@ public class TelaPrincipal extends JFrame{
                         registroService.deletarRegistro(registroDeletar);
                         atualizaTabela();
                     }
+                }
+            }
+        });
+
+        // Adiciona um DocumentListener ao JTextField para monitorar mudanças no texto
+        pesquisaField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                filterTable();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                filterTable();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                filterTable();
+            }
+
+            private void filterTable() {
+                String searchText = pesquisaField.getText();
+                if (searchText.trim().length() == 0) {
+                    sorter.setRowFilter(null);
+                } else {
+                    sorter.setRowFilter(RowFilter.regexFilter("(?i)" + searchText));
                 }
             }
         });
@@ -266,10 +314,11 @@ public class TelaPrincipal extends JFrame{
         anoRegistro = (int) anoComboBox.getSelectedItem();
         semestreRegistro = (int) semestreComboBox.getSelectedItem();
 
-        // Puxar registros para povoar a tabela
+        // Puxar registros para povoar a tabela, conforme ano e semestre definidos pelo usuário
         registros = registroService.buscaPorAnoESemestre(anoRegistro,semestreRegistro);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
+        //Povoar a tabela com os dados obtidos do Banco de Dados
         DefaultTableModel modelo = new DefaultTableModel(COLUNAS,0){
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -289,6 +338,11 @@ public class TelaPrincipal extends JFrame{
                     registro.getNumNotaFiscal()
             });
         }
+
+        // Criação do TableRowSorter e configuração na tabela
+        sorter = new TableRowSorter<>(modelo);
+        table.setRowSorter(sorter);
+
         table.setModel(modelo);
         atualizaCalculos(registros);
     }

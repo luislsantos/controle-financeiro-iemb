@@ -36,6 +36,21 @@ public class RegistroContabil {
     @Getter @Setter
     private int semestrePrestacao;
 
+    public String toStringCsv() {
+        return id +
+                "," + titulo +
+                "," + descricao +
+                "," + tipo +
+                "," + data +
+                "," + valor +
+                "," + origemOuDestinacao +
+                "," + cpfCnpj +
+                "," + numNotaFiscal +
+                "," + pathScanNotaFiscal +
+                "," + anoPrestacao +
+                "," + semestrePrestacao;
+    }
+
     protected RegistroContabil(String titulo, String descricao, String tipo, LocalDate data, Double valor) {
         this.titulo = titulo;
         this.descricao = descricao;

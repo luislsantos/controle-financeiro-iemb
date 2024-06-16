@@ -131,7 +131,7 @@ public class InserirRegistro extends JFrame{
             @Override
             public void actionPerformed(ActionEvent e) {
                 JFileChooser fileChooser = new JFileChooser();
-                FileNameExtensionFilter filter = new FileNameExtensionFilter("Arquivos PDF, JPEG ou PNG", "pdf", "jpg", "jpeg", "png");
+                FileNameExtensionFilter filter = new FileNameExtensionFilter("Arquivos PDF, JPEG, PNG ou DOCX", "pdf", "jpg", "jpeg", "png", "docx");
                 fileChooser.setFileFilter(filter);
                 int returnVal = fileChooser.showOpenDialog(painelEditarRegistro);
                 if(returnVal == JFileChooser.APPROVE_OPTION) {

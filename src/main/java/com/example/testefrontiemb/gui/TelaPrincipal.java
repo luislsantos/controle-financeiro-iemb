@@ -31,7 +31,6 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Objects;
 import java.util.prefs.Preferences;
 
 @Component
@@ -48,7 +47,7 @@ public class TelaPrincipal extends JFrame{
     private JTextField faltaGastarCustField;
     private JTextField faltaGastarInvestField;
     private JPanel cabecalho;
-    private JButton gerarRelatórioButton;
+    private JButton gerarRelatorioButton;
     private JPanel painelLateral;
     private JPanel painel;
     private JPanel footer;
@@ -263,6 +262,15 @@ public class TelaPrincipal extends JFrame{
                 } else {
                     sorter.setRowFilter(RowFilter.regexFilter("(?i)" + searchText));
                 }
+            }
+        });
+        //Adicional listener do botão de gerar relatório
+        gerarRelatorioButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                ExportarRelatorio telaExportarRelatorio = new ExportarRelatorio(registros);
+                telaExportarRelatorio.setParent(TelaPrincipal.this);
+                telaExportarRelatorio.exibir(painel);
             }
         });
     }

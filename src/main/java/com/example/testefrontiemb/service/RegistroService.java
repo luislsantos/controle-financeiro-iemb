@@ -13,9 +13,9 @@ public class RegistroService {
     public RegistroService(RegistroRepository registroRepository) {
         this.registroRepository = registroRepository;
     }
-    public void salvarRegistro(RegistroContabil registroContabil) {
-        registroRepository.save(registroContabil);
+    public RegistroContabil salvarRegistro(RegistroContabil registroContabil) {
         System.out.println("Salvou no Repositório");
+        return registroRepository.save(registroContabil);
     }
     public void lerRegistrosParaTeste(){
 

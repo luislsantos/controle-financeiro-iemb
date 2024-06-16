@@ -1,7 +1,9 @@
 package com.example.testefrontiemb.gui;
 
 import com.example.testefrontiemb.components.CustomDateTimeFormatter;
+import com.example.testefrontiemb.components.CustomDecimalFormatter;
 import com.example.testefrontiemb.models.RegistroContabil;
+import com.example.testefrontiemb.service.OrgArquivosService;
 import com.example.testefrontiemb.service.RegistroService;
 import lombok.Setter;
 
@@ -14,6 +16,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -43,6 +46,7 @@ public class InserirRegistro extends JFrame{
     @Setter
     private TelaPrincipal parent;
     CustomDateTimeFormatter formatter = new CustomDateTimeFormatter();
+    CustomDecimalFormatter decimalFormatter;
 
     /**
      * Construtor para quando se pretende inserir um registro novo
@@ -167,18 +171,29 @@ public class InserirRegistro extends JFrame{
                         if(custeioRadioButton.isSelected()) origem = "Custeio";
                         if(investimentoRadioButton.isSelected()) origem = "Investimento";
                     }
-                    RegistroContabil registro = new RegistroContabil(
-                            tituloField.getText(),
-                            descricaoField.getText(),
-                            tipo,
-                            LocalDate.parse(dataField.getText(),formatter),
-                            Double.parseDouble(valorField.getText()),
-                            origem,
-                            cpfCnpjField.getText(),
-                            numNotaFiscalField.getText(),
-                            pathScanNotaField.getText());
-                    //orgArquivosService.copiaArquivos(receita);
-                    registroService.salvarRegistro(registro);
+                    RegistroContabil registro = null;
+                    try {
+                        registro = new RegistroContabil(
+                                tituloField.getText(),
+                                descricaoField.getText(),
+                                tipo,
+                                LocalDate.parse(dataField.getText(),formatter),
+                                decimalFormatter.converteParaFloat(valorField.getText()),
+                                origem,
+                                cpfCnpjField.getText(),
+                                numNotaFiscalField.getText(),
+                                pathScanNotaField.getText());
+                    } catch (ParseException ex) {
+                        JOptionPane.showMessageDialog(parent,"Erro ao registrar os campos. Certifique-se que todos, \n" +
+                                "principalmente, os números, foram preenchidos corretamente" +
+                                "Descrição do erro: " + ex.getMessage(),"Erro",JOptionPane.ERROR_MESSAGE);
+                    }
+                    //Salvar para registrar na tabela e, assim, obter o ID
+                    RegistroContabil registroSalvo = registroService.salvarRegistro(registro);
+                    //Copiar o arquivo selecionado para a pasta do programa
+                    OrgArquivosService.copiaArquivos(registroSalvo);
+                    //Atualizar o registro no Banco de Dados com o endereço atualizado
+                    registroService.salvarRegistro(registroSalvo);
                     parent.atualizaTabela();
                     dispose();
                 }
@@ -189,7 +204,7 @@ public class InserirRegistro extends JFrame{
     /**
      * Configura o botão de salvar quando se estiver editando um registro já criado
      * @param registroEditando Registro que está sendo editado
-     * @param formatter
+     * @param formatter Formatador para data
      */
     private void configuraSalvarButton(RegistroContabil registroEditando, DateTimeFormatter formatter) {
         salvarButton.addActionListener(new ActionListener() {
@@ -211,7 +226,7 @@ public class InserirRegistro extends JFrame{
                     String destinacao = null;
                     //Verificar se o que está sendo editado é uma receita ou uma despesa
                     if (registroEditando.getTipo().equals("Receita")) {
-                        if(custeioRadioButton.isSelected()) destinacao = "Soteio";
+                        if(custeioRadioButton.isSelected()) destinacao = "Sorteio";
                         if(investimentoRadioButton.isSelected()) destinacao = "Rateio";
                     } else if (registroEditando.getTipo().equals("Despesa")) {
                         if(custeioRadioButton.isSelected()) destinacao = "Custeio";
@@ -219,14 +234,21 @@ public class InserirRegistro extends JFrame{
                     }
 
                     //Substituir os campos do registro conforme modelo
-                    registroEditando.setTitulo(tituloField.getText());
-                    registroEditando.setDescricao(descricaoField.getText());
-                    registroEditando.setData(LocalDate.parse(dataField.getText(), formatter));
-                    registroEditando.setValor(Double.parseDouble(valorField.getText()));
-                    registroEditando.setOrigemOuDestinacao(destinacao);
-                    registroEditando.setCpfCnpj(cpfCnpjField.getText());
-                    registroEditando.setNumNotaFiscal(numNotaFiscalField.getText());
-                    registroEditando.setPathScanNotaFiscal(pathScanNotaField.getText());
+                    try {
+                        registroEditando.setTitulo(tituloField.getText());
+                        registroEditando.setDescricao(descricaoField.getText());
+                        registroEditando.setData(LocalDate.parse(dataField.getText(), formatter));
+                        registroEditando.setValor(decimalFormatter.converteParaFloat(valorField.getText()));
+                        registroEditando.setOrigemOuDestinacao(destinacao);
+                        registroEditando.setCpfCnpj(cpfCnpjField.getText());
+                        registroEditando.setNumNotaFiscal(numNotaFiscalField.getText());
+                        registroEditando.setPathScanNotaFiscal(pathScanNotaField.getText());
+                    } catch (ParseException ex) {
+                        JOptionPane.showMessageDialog(parent,"Erro ao registrar os campos. Certifique-se que todos, \n" +
+                                "principalmente, os números, foram preenchidos corretamente." +
+                                "\nDescrição do erro: " + ex.getMessage(),"Erro",JOptionPane.ERROR_MESSAGE);
+                    }
+                    OrgArquivosService.copiaArquivos(registroEditando);
                     registroService.salvarRegistro(registroEditando);
                     parent.atualizaTabela();
                     dispose();
@@ -244,7 +266,7 @@ public class InserirRegistro extends JFrame{
         this.tituloField.setText(registroEditando.getTitulo());
         this.descricaoField.setText(registroEditando.getDescricao());
         this.dataField.setText(registroEditando.getData().format(formatter));
-        this.valorField.setText(String.valueOf(registroEditando.getValor()));
+        this.valorField.setText(decimalFormatter.converteParaVirgula(registroEditando.getValor()));
         //Setar os radio buttons de acordo com o que tiver marcado
         if(registroEditando.getTipo().equals("Receita")) {
             if(registroEditando.getOrigemOuDestinacao().equals("Sorteio")) {custeioRadioButton.setSelected(true);}

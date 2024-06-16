@@ -1,5 +1,6 @@
 package com.example.testefrontiemb.gui;
 
+import com.example.testefrontiemb.components.CustomDecimalFormatter;
 import com.example.testefrontiemb.components.CustomTableCellRenderer;
 import com.example.testefrontiemb.models.RegistroContabil;
 import com.example.testefrontiemb.service.CalculadoraService;
@@ -62,6 +63,7 @@ public class TelaPrincipal extends JFrame{
     public static final String FIRST_TIME_SETUP_PREF = "first-time-setup";
     public static final String PASTA_DESTINO_PREF = "pasta-destino";
     Preferences prefs = Preferences.userRoot().node("Contabilidade-IEMB");
+    CustomDecimalFormatter decimalFormatter;
     @Autowired
     public TelaPrincipal(RegistroService registroService) {
         this.registroService = registroService;
@@ -72,6 +74,7 @@ public class TelaPrincipal extends JFrame{
         atualizaTabela();
 
         exibir();
+        //prefs.putBoolean(FIRST_TIME_SETUP_PREF,true); // Para fins de teste do first time setup. Remover em produção
         if(prefs.getBoolean(FIRST_TIME_SETUP_PREF,true)) firstTimeSetup();
         inserirDespesaButton.addActionListener(new ActionListener() {
             @Override
@@ -164,8 +167,9 @@ public class TelaPrincipal extends JFrame{
             if(!pathPastaDestino.isEmpty()) { //Se a pasta foi selecionada corretamente e está vazia
             System.out.println("Salvar caminho como padrão: " + pathPastaDestino);
             prefs.put(PASTA_DESTINO_PREF, pathPastaDestino);
-        } else {}
-            JOptionPane.showMessageDialog(painel,"É necessário escolher uma pasta para salvar os anexos","Erro",JOptionPane.ERROR_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(painel,"É necessário escolher uma pasta para salvar os anexos","Erro",JOptionPane.ERROR_MESSAGE);
+            }
         } while (prefs.get(PASTA_DESTINO_PREF, "").equals(""));
         prefs.putBoolean(FIRST_TIME_SETUP_PREF,false);
 
@@ -212,7 +216,7 @@ public class TelaPrincipal extends JFrame{
                     registro.getDescricao(),
                     registro.getTipo(),
                     registro.getData().format(formatter),
-                    String.valueOf(registro.getValor()),
+                    decimalFormatter.converteParaVirgula(registro.getValor()),
                     registro.getOrigemOuDestinacao(),
                     registro.getCpfCnpj(),
                     registro.getNumNotaFiscal()
@@ -229,15 +233,6 @@ public class TelaPrincipal extends JFrame{
         valorInvestField.setText(String.valueOf(limiteInvestimento));
     }
 
-    /*public static void main(String[] args) {
-        JFrame frame = new JFrame("TelaPrincipal");
-        frame.setContentPane(new TelaPrincipal()).painel);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(1280, 720);
-        frame.setLocationRelativeTo(null);
-        frame.pack();
-        frame.setVisible(true);
-    }*/
     public void exibir() {
         this.setTitle("Tela Principal");
         this.setContentPane(painel);

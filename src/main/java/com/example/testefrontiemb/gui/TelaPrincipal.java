@@ -104,7 +104,7 @@ public class TelaPrincipal extends JFrame{
         atualizaTabela();
 
         exibir();
-        prefs.putBoolean(FIRST_TIME_SETUP_PREF,true); // Para fins de teste do first time setup. Remover em produção
+        //prefs.putBoolean(FIRST_TIME_SETUP_PREF,true); // Para fins de teste do first time setup. Remover em produção
         if(prefs.getBoolean(FIRST_TIME_SETUP_PREF,true)) firstTimeSetup();
 
         //Começa a inserir os listeners dos botões
@@ -316,7 +316,7 @@ public class TelaPrincipal extends JFrame{
                 "Aviso",JOptionPane.INFORMATION_MESSAGE);
         do {
             String pathPastaDestino = selecionaPasta();
-            if(!pathPastaDestino.isEmpty()) { //Se a pasta foi selecionada corretamente e está vazia
+            if(!pathPastaDestino.equals("")) { //Se a pasta foi selecionada corretamente e está vazia
             System.out.println("Salvar caminho como padrão: " + pathPastaDestino);
             prefs.put(PASTA_DESTINO_PREF, pathPastaDestino);
             } else {
@@ -460,7 +460,7 @@ public class TelaPrincipal extends JFrame{
         table.setModel(modelo);
 
         // Read CSV and populate table model
-        String csvFile = "mockdata.csv"; // Path to your CSV file
+        /*String csvFile = "mockdata.csv"; // Path to your CSV file
         String line;
         String[] columnNames;
         try (BufferedReader br = new BufferedReader(new FileReader(csvFile))) {
@@ -479,6 +479,6 @@ public class TelaPrincipal extends JFrame{
             }
         } catch (IOException e) {
             e.printStackTrace();
-        }
+        }*/
     }
 }

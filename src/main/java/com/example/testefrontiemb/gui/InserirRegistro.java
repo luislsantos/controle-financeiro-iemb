@@ -212,9 +212,9 @@ public class InserirRegistro extends JFrame{
                         descricaoField.getText().isEmpty() |
                         dataField.getText().isEmpty() |
                         valorField.getText().isEmpty() |
-                        (!custeioRadioButton.isSelected() & !investimentoRadioButton.isSelected()) |
+                        (!custeioRadioButton.isSelected() & !investimentoRadioButton.isSelected()) /*|
                         cpfCnpjField.getText().isEmpty() |
-                        numNotaFiscalField.getText().isEmpty() /*|
+                        numNotaFiscalField.getText().isEmpty() |
                         pathScanNotaField.getText().isEmpty()*/) {
 
                     mostraErroPreenchimento();
@@ -243,7 +243,7 @@ public class InserirRegistro extends JFrame{
                                 anoRegistro,
                                 semestreRegistro,
                                 comprovanteTextField.getText(),
-                                fotosTextField.getText());//Temporário, depois corrigir
+                                fotosTextField.getText());
                     } catch (ParseException ex) {
                         JOptionPane.showMessageDialog(parent,"Erro ao registrar os campos. Certifique-se que todos, \n" +
                                 "principalmente, os números, foram preenchidos corretamente" +
@@ -276,10 +276,10 @@ public class InserirRegistro extends JFrame{
                         descricaoField.getText().isEmpty() |
                         dataField.getText().isEmpty() |
                         valorField.getText().isEmpty() |
-                        (!custeioRadioButton.isSelected() & !investimentoRadioButton.isSelected()) |
+                        (!custeioRadioButton.isSelected() & !investimentoRadioButton.isSelected()) /*|
                         cpfCnpjField.getText().isEmpty() |
                         numNotaFiscalField.getText().isEmpty() |
-                        pathScanNotaField.getText().isEmpty()) {
+                        pathScanNotaField.getText().isEmpty()*/) {
 
                     mostraErroPreenchimento();
 

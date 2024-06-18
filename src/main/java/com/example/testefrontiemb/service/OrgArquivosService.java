@@ -20,31 +20,21 @@ public class OrgArquivosService {
     public static void copiaArquivos(RegistroContabil registro) {
         Preferences prefs = Preferences.userRoot().node("Contabilidade-IEMB");
 
-        String caminhoDestinoArquivoNota = prefs.get("pasta-destino", new JFileChooser().getFileSystemView().getDefaultDirectory().toString())
-                + "\\" + registro.getAnoPrestacao() + "\\" + registro.getSemestrePrestacao() + "º Semestre" + "\\"
-               + registro.getTipo() + "s" + "\\" + registro.getOrigemOuDestinacao()+ "s" + "\\"
-               + registro.getId() + "-" + registro.getTitulo() + " ("
+        String caminhoDestinoArquivos = prefs.get("pasta-destino", new JFileChooser().getFileSystemView().getDefaultDirectory().toString())
+                + File.separatorChar + registro.getAnoPrestacao() + File.separatorChar + registro.getSemestrePrestacao() + "º Semestre" + File.separatorChar
+                + registro.getTipo() + "s" + File.separatorChar + registro.getOrigemOuDestinacao()+ "s" + File.separatorChar
+                + registro.getId() + "-" + registro.getTitulo() + " ("
                 + registro.getData().getDayOfMonth() + "-"
                 + registro.getData().getMonth().getValue() + "-"
-                + registro.getData().getYear() + ") - Nota Fiscal"
+                + registro.getData().getYear() + ") - ";
+
+        String caminhoDestinoArquivoNota = caminhoDestinoArquivos + "Nota Fiscal"
                 + "." + FilenameUtils.getExtension(registro.getPathScanNotaFiscal());
 
-        String caminhoDestinoArquivoComprovantes = prefs.get("pasta-destino", new JFileChooser().getFileSystemView().getDefaultDirectory().toString())
-                + "\\" + registro.getAnoPrestacao() + "\\" + registro.getSemestrePrestacao() + "º Semestre" + "\\"
-                + registro.getTipo() + "s" + "\\" + registro.getOrigemOuDestinacao()+ "s" + "\\"
-                + registro.getId() + "-" + registro.getTitulo() + " ("
-                + registro.getData().getDayOfMonth() + "-"
-                + registro.getData().getMonth().getValue() + "-"
-                + registro.getData().getYear() + ") - Comprovantes"
+        String caminhoDestinoArquivoComprovantes = caminhoDestinoArquivos + "Comprovantes"
                 + "." + FilenameUtils.getExtension(registro.getPathComprovantes());
 
-        String caminhoDestinoArquivoFotos = prefs.get("pasta-destino", new JFileChooser().getFileSystemView().getDefaultDirectory().toString())
-                + "\\" + registro.getAnoPrestacao() + "\\" + registro.getSemestrePrestacao() + "º Semestre" + "\\"
-                + registro.getTipo() + "s" + "\\" + registro.getOrigemOuDestinacao()+ "s" + "\\"
-                + registro.getId() + "-" + registro.getTitulo() + " ("
-                + registro.getData().getDayOfMonth() + "-"
-                + registro.getData().getMonth().getValue() + "-"
-                + registro.getData().getYear() + ") - Fotos"
+        String caminhoDestinoArquivoFotos = caminhoDestinoArquivos + "Fotos"
                 + "." + FilenameUtils.getExtension(registro.getPathFotos());
 
         System.out.println("Caminho para onde será copiado o arquivo: " + caminhoDestinoArquivoNota);

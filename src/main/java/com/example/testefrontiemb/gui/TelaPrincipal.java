@@ -31,6 +31,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.prefs.Preferences;
@@ -102,6 +103,7 @@ public class TelaPrincipal extends JFrame{
         semestreComboBox.setSelectedItem(Integer.parseInt(prefs.get(ULTIMO_SEMESTRE_PREST_VISUALIZADO,"1")));
 
         atualizaTabela();
+        atualizaDataPrestacao();
 
         exibir();
         //prefs.putBoolean(FIRST_TIME_SETUP_PREF,true); // Para fins de teste do first time setup. Remover em produção
@@ -227,6 +229,7 @@ public class TelaPrincipal extends JFrame{
                     prefs.put(ULTIMO_ANO_PREST_VISUALIZADO,String.valueOf(anoComboBox.getSelectedItem()));
                     prefs.put(ULTIMO_SEMESTRE_PREST_VISUALIZADO,String.valueOf(semestreComboBox.getSelectedItem()));
                     atualizaTabela();
+                    atualizaDataPrestacao();
                 }
             }
         });
@@ -239,6 +242,7 @@ public class TelaPrincipal extends JFrame{
                     System.out.println("Seleciou o " + semestreComboBox.getSelectedItem() + "semestre.");
                     atualizaTabela();
                     prefs.put(ULTIMO_SEMESTRE_PREST_VISUALIZADO,String.valueOf(semestreComboBox.getSelectedItem()));
+                    atualizaDataPrestacao();
                 }
             }
         });
@@ -404,6 +408,26 @@ public class TelaPrincipal extends JFrame{
         double limiteInvestimento = CalculadoraService.calculaLimiteInvestimento(registros);
         valorCustField.setText("R$ " + decimalFormatter.converteParaVirgula(limiteCusteio));
         valorInvestField.setText("R$ " + decimalFormatter.converteParaVirgula(limiteInvestimento));
+
+        double valorTotalPrestacao = CalculadoraService.calculaValorPrestacaoContas(registros);
+        valorPrestField.setText("R$ " + decimalFormatter.converteParaVirgula(valorTotalPrestacao));
+    }
+
+    private void atualizaDataPrestacao() {
+        int ano = 0;
+        int semestre = 0;
+        try {
+            ano = (Integer) anoComboBox.getSelectedItem();
+            semestre = (Integer) semestreComboBox.getSelectedItem();
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(painel,"Erro ao atualizar as datas. Por favor contate o administrador so sistema." +
+                    "\n Erro: " + e.getMessage(),"Erro", JOptionPane.ERROR_MESSAGE);
+        }
+        if(semestre == 1) {
+            dataProxPrestacaoField.setText("30/09/" + ano);
+        } else if(semestre == 2) {
+            dataProxPrestacaoField.setText("31/03/" + (ano + 1));
+        }
     }
 
     public void exibir() {

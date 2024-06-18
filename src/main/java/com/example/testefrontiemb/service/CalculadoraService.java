@@ -47,12 +47,16 @@ public class CalculadoraService {
         return limiteInvestimento;
     }
 
-    public static double calculaValorPrestacaoContas(ArrayList<RegistroContabil> registros, LocalDate dataProxPrestacao) {
+    public static double calculaValorPrestacaoContas(ArrayList<RegistroContabil> registros) {
+        double valorTotalPrestacao = 0;
         LocalDate dataDeHoje = LocalDate.now();
         for(RegistroContabil registro:registros) {
+            if(registro.getTipo().equals("Receita")) {
+                valorTotalPrestacao += registro.getValor();
+            }
             // TODO Tenho de saber qual a regra que eles utilizam para saber quando devem prestar contas de qual valor
             //  if(LocalDate.parse(registro.getData()).
         }
-        return 0; //Provisório, só para não ficar apontado erro
+        return valorTotalPrestacao; //Provisório, só para não ficar apontado erro
     }
 }

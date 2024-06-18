@@ -100,6 +100,7 @@
             </constraints>
             <properties>
               <editable value="false"/>
+              <enabled value="false"/>
             </properties>
           </component>
           <component id="3b0a5" class="javax.swing.JLabel" binding="faltaGastarInvestLabel">
@@ -118,6 +119,7 @@
             </constraints>
             <properties>
               <editable value="false"/>
+              <enabled value="false"/>
             </properties>
           </component>
           <component id="5b711" class="javax.swing.JButton" binding="gerarRelatorioButton">

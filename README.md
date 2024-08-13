@@ -1,7 +1,7 @@
 # Sistema de Controle Financeiro
 O presente sistema foi desenvolvido visando facilitar o controle financeiro de uma instituição que receba verbas públicas e necessite, por isso, realizar prestação de contas de todas as despesas que possui.
 
-As categorias foram pensadas conforme o modelo do programa "Nota Fiscal Alagoana".
+As categorias foram pensadas conforme o modelo do programa "Nota Fiscal Cidadã".
 
 O sistema conta com:
 
